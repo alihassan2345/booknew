@@ -1,149 +1,211 @@
-import React, { useState, useEffect, useRef } from 'react';
-import ChatMessage from './ChatMessage';
-import ChatInput from './ChatInput';
-import SelectionHandler from '../SelectionHandler/SelectionHandler';
+import React, { useState, useRef, useEffect } from 'react';
+import "./Chatbot.css";
 
-const ChatWidget = () => {
+const Chatbot = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState([]);
+  const [inputValue, setInputValue] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [sessionId, setSessionId] = useState(null);
+  const [selectedText, setSelectedText] = useState('');
   const messagesEndRef = useRef(null);
-  const selectionHandler = new SelectionHandler();
+  const chatbotRef = useRef(null);
 
-  // Initialize chat session
-  useEffect(() => {
-    // Initialize selection handler
-    selectionHandler.init(handleSelectedText);
-
-    // Start a new chat session
-    startNewSession();
-  }, []);
-
-  // Scroll to bottom of messages
-  useEffect(() => {
-    scrollToBottom();
-  }, [messages]);
-
+  // Function to scroll to bottom of messages
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
-  const startNewSession = async () => {
-    try {
-      const response = await fetch(`${process.env.REACT_APP_API_BASE_URL}/api/chat/start`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({}),
-      });
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages]);
 
-      const data = await response.json();
-      setSessionId(data.session_id);
-    } catch (error) {
-      console.error('Error starting chat session:', error);
-    }
-  };
+  // Function to get selected text
+  useEffect(() => {
+    const handleSelection = () => {
+      const selectedText = window.getSelection().toString().trim();
+      setSelectedText(selectedText);
+    };
 
-  const handleSelectedText = (selectedText) => {
-    // Add the selected text as a message and prompt user to ask about it
-    setMessages(prev => [
-      ...prev,
-      { role: 'user', content: `About this text: "${selectedText}"`, isContext: true }
-    ]);
+    document.addEventListener('mouseup', handleSelection);
+    return () => {
+      document.removeEventListener('mouseup', handleSelection);
+    };
+  }, []);
 
-    // Optionally auto-focus the input to encourage the user to ask a question
-    // This could be implemented in the ChatInput component
-  };
+  // Function to send message to backend
+  const sendMessage = async (message, isSelectionQuery = false) => {
+    if (!message.trim() || isLoading) return;
 
-  const handleSendMessage = async (message) => {
-    if (!sessionId) return;
-
-    // Add user message to UI immediately
-    const userMessage = { role: 'user', content: message };
+    // Add user message to chat
+    const userMessage = { type: 'user', content: message };
     setMessages(prev => [...prev, userMessage]);
+    setInputValue('');
     setIsLoading(true);
 
     try {
-      // Send message to backend
-      const response = await fetch(`${process.env.REACT_APP_API_BASE_URL}/api/chat/query`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          session_id: sessionId,
-          query: message,
-          selected_text: selectionHandler.getSelectedText() // Include any selected text as context
-        }),
-      });
+      let response;
+      if (isSelectionQuery && selectedText) {
+        // Send to /chat/selected endpoint
+        response = await fetch('http://localhost:8000/chat/selected', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            question: message,
+            selected_text: selectedText
+          })
+        });
+      } else {
+        // Send to /chat endpoint
+        response = await fetch('http://localhost:8000/chat', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            question: message
+          })
+        });
+      }
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
 
       const data = await response.json();
 
-      // Add AI response to UI
-      const aiMessage = { role: 'assistant', content: data.response, sources: data.sources };
-      setMessages(prev => [...prev, aiMessage]);
-
-      // Clear the selected text after sending
-      selectionHandler.clearSelection();
+      // Add bot response to chat
+      const botMessage = {
+        type: 'bot',
+        content: data.response,
+        sources: data.sources || []
+      };
+      setMessages(prev => [...prev, botMessage]);
     } catch (error) {
       console.error('Error sending message:', error);
-      setMessages(prev => [
-        ...prev,
-        { role: 'assistant', content: 'Sorry, I encountered an error. Please try again.' }
-      ]);
+      const errorMessage = {
+        type: 'bot',
+        content: 'Sorry, I encountered an error. Please try again.'
+      };
+      setMessages(prev => [...prev, errorMessage]);
     } finally {
       setIsLoading(false);
     }
   };
 
-  const toggleChat = () => {
-    setIsOpen(!isOpen);
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    sendMessage(inputValue);
+  };
+
+  const handleAskAboutSelection = () => {
+    if (!selectedText) {
+      alert('Please select some text first');
+      return;
+    }
+    sendMessage(`About the selected text: "${selectedText.substring(0, 200)}${selectedText.length > 200 ? '...' : ''}"`, true);
   };
 
   return (
-    <div className="chatbot-widget">
-      {isOpen ? (
-        <div className="chat-container">
-          <div className="chat-header">
-            <h3>Physical AI Assistant</h3>
-            <button className="chat-close-button" onClick={toggleChat}>
+    <div className="chatbot-container">
+      {/* Chatbot button to open/close */}
+      <button
+        className="chatbot-button"
+        onClick={() => setIsOpen(!isOpen)}
+        title="Open Chatbot"
+      >
+        💬
+      </button>
+
+      {/* Chatbot panel */}
+      {isOpen && (
+        <div className="chatbot-panel" ref={chatbotRef}>
+          <div className="chatbot-header">
+            <h3>Book Assistant</h3>
+            <button
+              className="chatbot-close"
+              onClick={() => setIsOpen(false)}
+              aria-label="Close chat"
+            >
               ×
             </button>
           </div>
-          <div className="chat-messages">
+
+          <div className="chatbot-messages">
             {messages.length === 0 ? (
-              <div className="chat-welcome-message">
-                <p>Hello! I'm your Physical AI assistant. Ask me about the content in this book.</p>
-                <p>You can select text on the page and click "Ask AI about this" to get more specific answers.</p>
+              <div className="chatbot-welcome">
+                <p>Hello! I'm your book assistant. Ask me anything about the content in this book.</p>
+                {selectedText && (
+                  <button
+                    className="ask-about-selection-btn"
+                    onClick={handleAskAboutSelection}
+                  >
+                    Ask about selected text: "{selectedText.substring(0, 50)}..."
+                  </button>
+                )}
               </div>
             ) : (
               messages.map((msg, index) => (
-                <ChatMessage
+                <div
                   key={index}
-                  message={msg.content}
-                  role={msg.role}
-                  sources={msg.sources}
-                />
+                  className={`message ${msg.type}`}
+                >
+                  <div className="message-content">
+                    {msg.content}
+                    {msg.sources && msg.sources.length > 0 && (
+                      <div className="message-sources">
+                        <small>Sources: {msg.sources.slice(0, 3).join(', ')}</small>
+                      </div>
+                    )}
+                  </div>
+                </div>
               ))
+            )}
+            {isLoading && (
+              <div className="message bot">
+                <div className="message-content">
+                  <div className="typing-indicator">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                  </div>
+                </div>
+              </div>
             )}
             <div ref={messagesEndRef} />
           </div>
-          <div className="chat-input-container">
-            <ChatInput
-              onSendMessage={handleSendMessage}
-              disabled={isLoading || !sessionId}
+
+          {selectedText && messages.length > 0 && (
+            <div className="selected-text-notice">
+              <button
+                className="ask-about-selection-btn"
+                onClick={handleAskAboutSelection}
+              >
+                Ask about selected text: "{selectedText.substring(0, 50)}..."
+              </button>
+            </div>
+          )}
+
+          <form className="chatbot-input-form" onSubmit={handleSubmit}>
+            <input
+              type="text"
+              value={inputValue}
+              onChange={(e) => setInputValue(e.target.value)}
+              placeholder="Ask a question about the book..."
+              disabled={isLoading}
             />
-          </div>
+            <button
+              type="submit"
+              disabled={!inputValue.trim() || isLoading}
+            >
+              Send
+            </button>
+          </form>
         </div>
-      ) : (
-        <button className="chatbot-button" onClick={toggleChat}>
-          🤖
-        </button>
       )}
     </div>
   );
 };
 
-export default ChatWidget;
+export default Chatbot;

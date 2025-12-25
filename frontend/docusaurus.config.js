@@ -78,6 +78,11 @@ const config = {
             label: 'Book',
           },
           {
+            to: '/',
+            label: 'Home',
+            position: 'left',
+          },
+          {
             href: 'https://github.com/physical-ai/physical-ai-book',
             label: 'GitHub',
             position: 'right',
@@ -97,15 +102,23 @@ const config = {
             ],
           },
           {
-            title: 'Community',
+            title: 'Modules',
             items: [
               {
-                label: 'Stack Overflow',
-                href: 'https://stackoverflow.com/questions/tagged/docusaurus',
+                label: 'The Robotic Nervous System',
+                to: '/docs/Module-1-ROS2/ros2-node-example',
               },
               {
-                label: 'Discord',
-                href: 'https://discordapp.com/invite/docusaurus',
+                label: 'The Digital Twin',
+                to: '/docs/Module-2-Simulation/gazebo-simulation-example',
+              },
+              {
+                label: 'The AI-Robot Brain',
+                to: '/docs/Module-3-Nvidia-Isaac/isaac-sim-example',
+              },
+              {
+                label: 'Vision-Language-Action',
+                to: '/docs/Module-4-VLA/vla-model-example',
               },
             ],
           },
@@ -114,7 +127,11 @@ const config = {
             items: [
               {
                 label: 'GitHub',
-                href: 'https://github.com/facebook/docusaurus',
+                href: 'https://github.com/physical-ai/physical-ai-book',
+              },
+              {
+                label: 'Discord',
+                href: 'https://discordapp.com/invite/docusaurus',
               },
             ],
           },
@@ -124,6 +141,21 @@ const config = {
       prism: {
         theme: prismThemes.github,
         darkTheme: prismThemes.dracula,
+      },
+      colorMode: {
+        defaultMode: 'light',
+        disableSwitch: false,
+        respectPrefersColorScheme: true,
+      },
+      tableOfContents: {
+        minHeadingLevel: 2,
+        maxHeadingLevel: 5,
+      },
+      docs: {
+        sidebar: {
+          hideable: true,
+          autoCollapseCategories: true,
+        },
       },
     }),
 };
