@@ -1,0 +1,9 @@
+.breadcrumbsContainer {
+  border-bottom: 1px solid var(--ifm-toc-border-color);
+  margin: 0 var(--ifm-spacing-horizontal);
+  position: relative;
+}
+
+.breadcrumbsContainer .breadcrumbs {
+  margin-bottom: 0;
+}

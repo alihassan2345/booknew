@@ -1,0 +1,54 @@
+# Dependencies
+node_modules/
+__pycache__/
+*.pyc
+.venv/
+venv/
+env/
+.ENV
+dist/
+build/
+*.egg-info/
+backend
+# Docusaurus
+.docusaurus/
+.cache/
+.null
+# FastAPI/Python
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.so
+.coverage
+.pytest_cache/
+.hypothesis/
+
+# Environment variables
+.env*
+!.env.example
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Testing
+coverage/
+htmlcov/
+
+# Secrets
+secrets/
+*.key
+*.pem
+*.crt
+*.cert

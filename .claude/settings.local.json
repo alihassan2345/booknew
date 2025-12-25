@@ -1,0 +1,33 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx docusaurus build)",
+      "Bash(GEMINI_API_KEY=test_key python test_services.py)",
+      "Bash(python simple_test.py)",
+      "Bash(dir /s /b *.py)",
+      "Bash(findstr -i main)",
+      "Bash(dir /s *.py)",
+      "Bash(dir *.py /s)",
+      "Bash(powershell \"Get-ChildItem -Recurse *.py\")",
+      "Bash(pip install -r requirements.txt)",
+      "Bash(pip install fastapi uvicorn python-dotenv sqlalchemy)",
+      "Bash(pip install openai qdrant-client python-socketio sse-starlette httpx)",
+      "Bash(pip install:*)",
+      "Bash(python main.py)",
+      "Bash(curl http://localhost:8000/)",
+      "Bash(python scripts/ingest_docs.py)",
+      "Bash(dir frontenddocs /s)",
+      "Bash(dir docs /s)",
+      "Bash(python scripts/ingest_docs.py ../frontend/docs)",
+      "Bash(GEMINI_API_KEY=test_key python scripts/ingest_docs.py ../frontend/docs)",
+      "Bash(timeout 30)",
+      "Bash(GEMINI_API_KEY=invalid_key python scripts/ingest_docs.py ../frontend/docs)",
+      "Bash(timeout 10)",
+      "Bash(python -c \"from qdrant_client import QdrantClient; client = QdrantClient\\(path=''./test_qdrant''\\); print\\(''Local Qdrant client created successfully''\\)\")",
+      "Bash(tasklist)",
+      "Bash(findstr python)",
+      "Bash(curl http://localhost:8000/health)",
+      "Bash(python test_retrieval.py)"
+    ]
+  }
+}

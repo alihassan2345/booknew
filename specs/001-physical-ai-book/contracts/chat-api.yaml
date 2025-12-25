@@ -1,0 +1,198 @@
+openapi: 3.0.0
+info:
+  title: Physical AI Book RAG Chat API
+  description: API for the RAG chatbot integrated with the Physical AI & Humanoid Robotics Book
+  version: 1.0.0
+servers:
+  - url: http://localhost:8000
+    description: Development server
+  - url: https://api.physicalai-book.com
+    description: Production server
+
+paths:
+  /api/chat/start:
+    post:
+      summary: Start a new chat session
+      description: Creates a new chat session for the user
+      responses:
+        '200':
+          description: Chat session created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  session_id:
+                    type: string
+                    description: Unique identifier for the chat session
+                  created_at:
+                    type: string
+                    format: date-time
+                    description: Timestamp when the session was created
+        '500':
+          description: Internal server error
+      tags:
+        - Chat
+
+  /api/chat/query:
+    post:
+      summary: Send a query to the RAG chatbot
+      description: Sends a user query to the chatbot and returns a response based on book content
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - session_id
+                - query
+              properties:
+                session_id:
+                  type: string
+                  description: Unique identifier for the chat session
+                query:
+                  type: string
+                  description: User's question or query
+                selected_text:
+                  type: string
+                  description: Optional selected text to prioritize as context
+                module_context:
+                  type: string
+                  description: Optional module to constrain search to
+      responses:
+        '200':
+          description: Chat response generated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  response:
+                    type: string
+                    description: The chatbot's response
+                  sources:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        title:
+                          type: string
+                          description: Title of the source document
+                        url:
+                          type: string
+                          description: URL to the source in the book
+                        snippet:
+                          type: string
+                          description: Relevant snippet from the source
+                  tokens_used:
+                    type: object
+                    properties:
+                      input:
+                        type: integer
+                        description: Number of input tokens used
+                      output:
+                        type: integer
+                        description: Number of output tokens generated
+        '400':
+          description: Bad request - missing required parameters
+        '404':
+          description: Chat session not found
+        '500':
+          description: Internal server error
+      tags:
+        - Chat
+
+  /api/chat/history:
+    get:
+      summary: Get chat history
+      description: Retrieves the conversation history for a specific session
+      parameters:
+        - name: session_id
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Unique identifier for the chat session
+      responses:
+        '200':
+          description: Chat history retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  messages:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ChatMessage'
+        '404':
+          description: Chat session not found
+        '500':
+          description: Internal server error
+      tags:
+        - Chat
+
+  /api/ingest:
+    post:
+      summary: Ingest book content for RAG
+      description: Processes Docusaurus markdown files and creates vector embeddings
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - source_path
+              properties:
+                source_path:
+                  type: string
+                  description: Path to the markdown files to process
+                force_reprocess:
+                  type: boolean
+                  description: Whether to reprocess existing documents
+      responses:
+        '200':
+          description: Content ingested successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  documents_processed:
+                    type: integer
+                    description: Number of documents processed
+                  embeddings_created:
+                    type: integer
+                    description: Number of embeddings created
+                  status:
+                    type: string
+                    description: Processing status
+        '500':
+          description: Internal server error
+      tags:
+        - Ingestion
+
+components:
+  schemas:
+    ChatMessage:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Unique identifier for the message
+        role:
+          type: string
+          enum: [user, assistant]
+          description: Role of the message sender
+        content:
+          type: string
+          description: Content of the message
+        timestamp:
+          type: string
+          format: date-time
+          description: When the message was created
+        source_module:
+          type: string
+          description: Module that provided context for this response
